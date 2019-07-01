@@ -73,7 +73,12 @@ app.get('/repo/:owner/:repo/branches', async function (req, res) {
   res.render('context', { context: JSON.stringify(branches, null, 2) })
 })
 
-async function getRepoBranches (owner, repo) {
+app.get('/repo/:owner/:repo/:sha', async function (req, res) {
+  const tree = await getRepoTree(req.params.owner, req.params.repo, req.params.sha)
+  res.render('context', { context: JSON.stringify(tree, null, 2) })
+})
+
+async function getInstallationId (owner, repo) {
   try {
     const jwt = ghApp.getSignedJsonWebToken()
 
@@ -90,6 +95,16 @@ async function getRepoBranches (owner, repo) {
 
     // contains the installation id necessary to authenticate as an installation
     const installationId = data.id
+    return installationId
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
+}
+
+async function getRepoBranches (owner, repo) {
+  try {
+    const installationId = await getInstallationId(owner, repo)
     const installationAccessToken = await ghApp.getInstallationAccessToken({
       installationId
     })
@@ -109,6 +124,31 @@ async function getRepoBranches (owner, repo) {
     console.error(err)
     throw err
   }
+}
+
+async function getRepoTree (owner, repo, sha) {
+  try {
+    const installationId = await getInstallationId(owner, repo)
+    const installationAccessToken = await ghApp.getInstallationAccessToken({
+      installationId
+    })
+    console.log(`Installation Access Token: ${installationAccessToken}`)
+
+    const { data: tree } = await request(`GET /repos/:owner/:repo/git/trees/:tree_sha`, {
+      headers: {
+        authorization: `token ${installationAccessToken}`
+      },
+      owner,
+      repo,
+      tree_sha: sha
+    })
+    console.log(`Tree for repo: /${owner}/${repo}/git/trees/${sha}\n------`)
+    console.log(JSON.stringify(tree, null, 2))
+    return tree
+  } catch (err) {
+    console.error(err)
+    throw err
+  } 
 }
 
 async function main () {
