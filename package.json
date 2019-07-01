@@ -1,0 +1,23 @@
+{
+  "name": "github-app-poc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jackycute/github-app-poc.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jackycute/github-app-poc/issues"
+  },
+  "homepage": "https://github.com/jackycute/github-app-poc#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
