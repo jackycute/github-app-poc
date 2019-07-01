@@ -61,7 +61,7 @@ app.get('/callback', async function (req, res) {
     console.log(JSON.stringify(repositories, null, 2))
 
     const repo = repositories.repositories[0]
-    getRepo(repo.owner.login, repo.name)
+    getRepoBranches(repo.owner.login, repo.name)
 
   } catch (err) {
     console.error(err)
@@ -70,12 +70,12 @@ app.get('/callback', async function (req, res) {
   res.redirect('/')
 })
 
-app.get('/repo/:owner/:repo', function (req, res) {
-  getRepo(req.params.owner, req.params.repo)
+app.get('/repo/:owner/:repo/branches', function (req, res) {
+  getRepoBranches(req.params.owner, req.params.repo)
   res.redirect('/')
 })
 
-async function getRepo (owner, repo) {
+async function getRepoBranches (owner, repo) {
   try {
     const jwt = ghApp.getSignedJsonWebToken()
 
