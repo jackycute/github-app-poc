@@ -78,6 +78,13 @@ app.get('/repo/:owner/:repo/:sha', async function (req, res) {
   res.render('context', { context: JSON.stringify(tree, null, 2) })
 })
 
+app.get('/contents/:owner/:repo/:path*', async function (req, res) {
+  const path = req.params.path + req.params[0]
+  console.log(path)
+  const contents = await getRepoContents(req.params.owner, req.params.repo, path)
+  res.render('context', { context: JSON.stringify(contents, null, 2) })
+})
+
 async function getInstallationId (owner, repo) {
   try {
     const jwt = ghApp.getSignedJsonWebToken()
@@ -148,7 +155,32 @@ async function getRepoTree (owner, repo, sha) {
   } catch (err) {
     console.error(err)
     throw err
-  } 
+  }
+}
+
+async function getRepoContents (owner, repo, path) {
+  try {
+    const installationId = await getInstallationId(owner, repo)
+    const installationAccessToken = await ghApp.getInstallationAccessToken({
+      installationId
+    })
+    console.log(`Installation Access Token: ${installationAccessToken}`)
+
+    const { data: contents } = await request(`GET /repos/:owner/:repo/contents/:path`, {
+      headers: {
+        authorization: `token ${installationAccessToken}`
+      },
+      owner,
+      repo,
+      path
+    })
+    console.log(`Contents for repo: /${owner}/${repo}/contents/${path}\n------`)
+    console.log(JSON.stringify(contents, null, 2))
+    return contents
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
 }
 
 async function main () {
