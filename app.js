@@ -63,26 +63,36 @@ app.get('/callback', async function (req, res) {
     const repo = repositories.repositories[0]
     res.redirect(`/repo/${repo.owner.login}/${repo.name}/branches`)
   } catch (err) {
-    console.error(err)
-    res.redirect('/')
+    res.send(err)
   }
 })
 
 app.get('/repo/:owner/:repo/branches', async function (req, res) {
-  const branches = await getRepoBranches(req.params.owner, req.params.repo)
-  res.render('context', { context: JSON.stringify(branches, null, 2) })
+  try {
+    const branches = await getRepoBranches(req.params.owner, req.params.repo)
+    res.render('context', { context: JSON.stringify(branches, null, 2) })
+  } catch (err) {
+    res.send(err)
+  }
 })
 
 app.get('/repo/:owner/:repo/:sha', async function (req, res) {
-  const tree = await getRepoTree(req.params.owner, req.params.repo, req.params.sha)
-  res.render('context', { context: JSON.stringify(tree, null, 2) })
+  try {
+    const tree = await getRepoTree(req.params.owner, req.params.repo, req.params.sha)
+    res.render('context', { context: JSON.stringify(tree, null, 2) })
+  } catch (err) {
+    res.send(err)
+  }
 })
 
 app.get('/contents/:owner/:repo/:path*', async function (req, res) {
-  const path = req.params.path + req.params[0]
-  console.log(path)
-  const contents = await getRepoContents(req.params.owner, req.params.repo, path, req.query.ref)
-  res.render('context', { context: JSON.stringify(contents, null, 2) })
+  try {
+    const path = req.params.path + req.params[0]
+    const contents = await getRepoContents(req.params.owner, req.params.repo, path, req.query.ref)
+    res.render('context', { context: JSON.stringify(contents, null, 2) })
+  } catch (err) {
+    res.send(err)
+  }
 })
 
 async function getInstallationId (owner, repo) {
@@ -200,6 +210,7 @@ async function main () {
     app.listen(3000)
   } catch (err) {
     console.error(err)
+    process.exit(1)
   }
 }
 
