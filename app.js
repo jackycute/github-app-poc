@@ -61,18 +61,16 @@ app.get('/callback', async function (req, res) {
     console.log(JSON.stringify(repositories, null, 2))
 
     const repo = repositories.repositories[0]
-    getRepoBranches(repo.owner.login, repo.name)
-
+    res.redirect(`/repo/${repo.owner.login}/${repo.name}/branches`)
   } catch (err) {
     console.error(err)
+    res.redirect('/')
   }
-
-  res.redirect('/')
 })
 
-app.get('/repo/:owner/:repo/branches', function (req, res) {
-  getRepoBranches(req.params.owner, req.params.repo)
-  res.redirect('/')
+app.get('/repo/:owner/:repo/branches', async function (req, res) {
+  const branches = await getRepoBranches(req.params.owner, req.params.repo)
+  res.render('context', { context: JSON.stringify(branches, null, 2) })
 })
 
 async function getRepoBranches (owner, repo) {
@@ -106,8 +104,10 @@ async function getRepoBranches (owner, repo) {
     })
     console.log(`Branches for repo: /${owner}/${repo}\n------`)
     console.log(JSON.stringify(branches, null, 2))
+    return branches
   } catch (err) {
     console.error(err)
+    throw err
   }
 }
 
