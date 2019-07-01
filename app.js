@@ -60,12 +60,56 @@ app.get('/callback', async function (req, res) {
     console.log(`Installed Repositories for installation id: ${installation_id}\n------`)
     console.log(JSON.stringify(repositories, null, 2))
 
+    const repo = repositories.repositories[0]
+    getRepo(repo.owner.login, repo.name)
+
   } catch (err) {
     console.error(err)
   }
 
   res.redirect('/')
 })
+
+app.get('/repo/:owner/:repo', function (req, res) {
+  getRepo(req.params.owner, req.params.repo)
+  res.redirect('/')
+})
+
+async function getRepo (owner, repo) {
+  try {
+    const jwt = ghApp.getSignedJsonWebToken()
+
+    // Example of using authenticated app to GET an individual installation
+    // https://developer.github.com/v3/apps/#find-repository-installation
+    const { data } = await request("GET /repos/:owner/:repo/installation", {
+      owner: owner,
+      repo: repo,
+      headers: {
+        authorization: `Bearer ${jwt}`,
+        accept: "application/vnd.github.machine-man-preview+json"
+      }
+    })
+
+    // contains the installation id necessary to authenticate as an installation
+    const installationId = data.id
+    const installationAccessToken = await ghApp.getInstallationAccessToken({
+      installationId
+    })
+    console.log(`Installation Access Token: ${installationAccessToken}`)
+
+    const { data: branches } = await request(`GET /repos/:owner/:repo/branches`, {
+      headers: {
+        authorization: `token ${installationAccessToken}`
+      },
+      owner,
+      repo
+    })
+    console.log(`Branches for repo: /${owner}/${repo}\n------`)
+    console.log(JSON.stringify(branches, null, 2))
+  } catch (err) {
+    console.error(err)
+  }
+}
 
 async function main () {
   try {
