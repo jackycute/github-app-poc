@@ -81,7 +81,7 @@ app.get('/repo/:owner/:repo/:sha', async function (req, res) {
 app.get('/contents/:owner/:repo/:path*', async function (req, res) {
   const path = req.params.path + req.params[0]
   console.log(path)
-  const contents = await getRepoContents(req.params.owner, req.params.repo, path)
+  const contents = await getRepoContents(req.params.owner, req.params.repo, path, req.query.ref)
   res.render('context', { context: JSON.stringify(contents, null, 2) })
 })
 
@@ -158,7 +158,7 @@ async function getRepoTree (owner, repo, sha) {
   }
 }
 
-async function getRepoContents (owner, repo, path) {
+async function getRepoContents (owner, repo, path, ref) {
   try {
     const installationId = await getInstallationId(owner, repo)
     const installationAccessToken = await ghApp.getInstallationAccessToken({
@@ -166,13 +166,14 @@ async function getRepoContents (owner, repo, path) {
     })
     console.log(`Installation Access Token: ${installationAccessToken}`)
 
-    const { data: contents } = await request(`GET /repos/:owner/:repo/contents/:path`, {
+    const { data: contents } = await request(`GET /repos/:owner/:repo/contents/:path?ref=:ref`, {
       headers: {
         authorization: `token ${installationAccessToken}`
       },
       owner,
       repo,
-      path
+      path,
+      ref: ref || 'master'
     })
     console.log(`Contents for repo: /${owner}/${repo}/contents/${path}\n------`)
     console.log(JSON.stringify(contents, null, 2))
