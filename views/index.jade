@@ -3,3 +3,5 @@ html(lang="en")
   body
     h1 GitHub App PoC
     a(href='https://github.com/apps/#{app_name}/installations/new') Install & Authorize GitHub App
+    <br>
+    a(href='https://github.com/login/oauth/authorize?client_id=#{client_id}&redirect_uri=#{"http://localhost:3000/callback"}') Authorize GitHub App

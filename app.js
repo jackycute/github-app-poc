@@ -18,7 +18,7 @@ app.set('view engine', 'jade')
 app.set('views', './views')
 
 app.get('/', function (req, res) {
-  res.render('index', { app_name: APP_NAME })
+  res.render('index', { app_name: APP_NAME, client_id: ClientId })
 })
 
 app.get('/callback', async function (req, res) {
@@ -51,13 +51,14 @@ app.get('/callback', async function (req, res) {
     console.log('User Installations\n------')
     console.log(JSON.stringify(installations, null, 2))
 
-    const { data: repositories } = await request(`GET /user/installations/${installation_id}/repositories`, {
+    const installationId = installation_id || installations.installations[0].id
+    const { data: repositories } = await request(`GET /user/installations/${installationId}/repositories`, {
       headers: {
         accept: 'application/vnd.github.machine-man-preview+json',
         authorization: `token ${token}`
       }
     })
-    console.log(`Installed Repositories for installation id: ${installation_id}\n------`)
+    console.log(`Installed Repositories for installation id: ${installationId}\n------`)
     console.log(JSON.stringify(repositories, null, 2))
 
     const repo = repositories.repositories[0]
