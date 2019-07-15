@@ -144,6 +144,84 @@ async function getRepoBranches (owner, repo) {
   }
 }
 
+async function getBranchReference (owner, repo, branch) {
+  try {
+    const installationId = await getInstallationId(owner, repo)
+    const installationAccessToken = await ghApp.getInstallationAccessToken({
+      installationId
+    })
+    console.log(`Installation Access Token: ${installationAccessToken}`)
+
+    const { data: reference } = await request(`GET /repos/:owner/:repo/git/refs/:ref`, {
+      headers: {
+        authorization: `token ${installationAccessToken}`
+      },
+      owner,
+      repo,
+      ref: `heads/${branch}`
+    })
+    console.log(`Reference for repo: /${owner}/${repo}/git/refs/${branch}\n------`)
+    console.log(JSON.stringify(reference, null, 2))
+    return reference
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
+}
+
+async function createBranchReference (owner, repo, ref, sha) {
+  try {
+    const installationId = await getInstallationId(owner, repo)
+    const installationAccessToken = await ghApp.getInstallationAccessToken({
+      installationId
+    })
+    console.log(`Installation Access Token: ${installationAccessToken}`)
+
+    const { data: reference } = await request(`POST /repos/:owner/:repo/git/refs`, {
+      headers: {
+        authorization: `token ${installationAccessToken}`
+      },
+      owner,
+      repo,
+      ref: `refs/heads/${ref}`,
+      sha
+    })
+    console.log(`Reference for repo: /${owner}/${repo}/git/refs\n------`)
+    console.log(JSON.stringify(reference, null, 2))
+    return reference
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
+}
+
+async function updateBranchReference (owner, repo, ref, sha, force = false) {
+  try {
+    const installationId = await getInstallationId(owner, repo)
+    const installationAccessToken = await ghApp.getInstallationAccessToken({
+      installationId
+    })
+    console.log(`Installation Access Token: ${installationAccessToken}`)
+
+    const { data: reference } = await request(`PATCH /repos/:owner/:repo/git/refs/:ref`, {
+      headers: {
+        authorization: `token ${installationAccessToken}`
+      },
+      owner,
+      repo,
+      ref: `heads/${ref}`,
+      sha,
+      force
+    })
+    console.log(`Reference for repo: /${owner}/${repo}/git/refs/${ref}\n------`)
+    console.log(JSON.stringify(reference, null, 2))
+    return reference
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
+}
+
 async function getRepoTree (owner, repo, sha) {
   try {
     const installationId = await getInstallationId(owner, repo)
@@ -163,6 +241,129 @@ async function getRepoTree (owner, repo, sha) {
     console.log(`Tree for repo: /${owner}/${repo}/git/trees/${sha}\n------`)
     console.log(JSON.stringify(tree, null, 2))
     return tree
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
+}
+
+async function createBlob (owner, repo, content) {
+  try {
+    const installationId = await getInstallationId(owner, repo)
+    const installationAccessToken = await ghApp.getInstallationAccessToken({
+      installationId
+    })
+    console.log(`Installation Access Token: ${installationAccessToken}`)
+
+    const { data: blob } = await request(`POST /repos/:owner/:repo/git/blobs`, {
+      headers: {
+        authorization: `token ${installationAccessToken}`
+      },
+      owner,
+      repo,
+      content,
+      encoding: 'utf-8'
+    })
+    console.log(`Blob for repo: /${owner}/${repo}/git/blobs\n------`)
+    console.log(JSON.stringify(blob, null, 2))
+    return blob
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
+}
+
+async function createRepoTree (owner, repo, baseTreeSha, path, content) {
+  try {
+    const installationId = await getInstallationId(owner, repo)
+    const installationAccessToken = await ghApp.getInstallationAccessToken({
+      installationId
+    })
+    console.log(`Installation Access Token: ${installationAccessToken}`)
+
+    const { data: tree } = await request(`POST /repos/:owner/:repo/git/trees`, {
+      headers: {
+        authorization: `token ${installationAccessToken}`
+      },
+      owner,
+      repo,
+      base_tree: baseTreeSha,
+      tree: [{
+        path,
+        mode: '100644',
+        type: 'blob',
+        content
+      }]
+    })
+    console.log(`Tree for repo: /${owner}/${repo}/git/trees\n------`)
+    console.log(JSON.stringify(tree, null, 2))
+    return tree
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
+}
+
+async function createCommmit (owner, repo, message, authorName, authorEmail, authorDate, parentSha, treeSha) {
+  try {
+    const installationId = await getInstallationId(owner, repo)
+    const installationAccessToken = await ghApp.getInstallationAccessToken({
+      installationId
+    })
+    console.log(`Installation Access Token: ${installationAccessToken}`)
+
+    const parents = parentSha ? [parentSha] : undefined
+    const { data: commit } = await request(`POST /repos/:owner/:repo/git/commits`, {
+      headers: {
+        authorization: `token ${installationAccessToken}`
+      },
+      owner,
+      repo,
+      message,
+      author: {
+        name: authorName,
+        email: authorEmail,
+        data: authorDate
+      },
+      parents,
+      tree: treeSha
+    })
+    console.log(`Commit for repo: /${owner}/${repo}/git/commits\n------`)
+    console.log(JSON.stringify(commit, null, 2))
+    return commit
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
+}
+
+async function createRepoContents (owner, repo, path, message, content, branch, authorName, authorEmail) {
+  try {
+    const installationId = await getInstallationId(owner, repo)
+    const installationAccessToken = await ghApp.getInstallationAccessToken({
+      installationId
+    })
+    console.log(`Installation Access Token: ${installationAccessToken}`)
+
+    const author = (authorName && authorEmail) ? {
+      authorName,
+      authorEmail
+    } : undefined
+    const { data: contents } = await request(`PUT /repos/:owner/:repo/contents/:path`, {
+      headers: {
+        authorization: `token ${installationAccessToken}`
+      },
+      owner,
+      repo,
+      path,
+      message,
+      content,
+      branch,
+      author
+    })
+    console.log(`Contents for repo: /${owner}/${repo}/contents/${path}\n------`)
+    console.log(JSON.stringify(contents, null, 2))
+    return contents
   } catch (err) {
     console.error(err)
     throw err
