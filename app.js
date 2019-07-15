@@ -169,6 +169,24 @@ async function getRepoTree (owner, repo, sha) {
   }
 }
 
+async function deleteInstallation (installationId) {
+  try {
+    const jwt = ghApp.getSignedJsonWebToken()
+
+    const result = await request(`DELETE /app/installations/:installation_id`, {
+      headers: {
+        authorization: `Bearer ${jwt}`,
+        accept: "application/vnd.github.gambit-preview+json"
+      },
+      installation_id: installationId
+    })
+    console.log(result)
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
+}
+
 async function getRepoContents (owner, repo, path, ref) {
   try {
     const installationId = await getInstallationId(owner, repo)
