@@ -96,6 +96,71 @@ app.get('/contents/:owner/:repo/:path*', async function (req, res) {
   }
 })
 
+app.get('/repo/:owner/:repo/:branch/:path*', async function (req, res) {
+  try {
+    // get head ref
+    const branches = await getRepoBranches(req.params.owner, req.params.repo)
+    let branch = branches.find(b => {
+      return b.name === req.params.branch
+    })
+    let refSha
+    let refName
+    let commit
+    let forcePush = false
+    if (branches.length > 0) {
+      if (branch) {
+        // found requested branch
+        refName = branch.name
+        refSha = branch.commit.sha
+      } else {
+        // requested branch not found, try default branch
+        const defaultBranch = 'master'
+        branch = branches.find(b => {
+          return b.name === defaultBranch
+        })
+        if (!branch) {
+          // requested branch not found, use default branch to open new branch
+          refName = req.params.branch
+          refSha = (await getBranchReference(req.params.owner, req.params.repo, defaultBranch)).object.sha
+        }
+      }
+    } else {
+      // git repo is empty
+      refName = req.params.branch
+      // create .keep file to init repo
+      const content = await createRepoContents(req.params.owner, req.params.repo, '.keep', 'initial commit', '', req.params.branch)
+      // omitting base tree to make root commit
+      refSha = undefined
+      // force push to hide initial commit
+      forcePush = true
+      branch = {
+        name: req.params.branch,
+        commit: {
+          sha: content.commit.sha
+        }
+      }
+    }
+    // create blob from file content
+    // const blob = await createBlob(req.params.owner, req.params.repo, 'test content: ' + Date.now())
+    // create tree from reference, blob and file info
+    const path = req.params.path + req.params[0]
+    const tree = await createRepoTree(req.params.owner, req.params.repo, refSha, path, 'test content: ' + Date.now())
+    // create commit from reference and tree and commit info
+    commit = await createCommmit(req.params.owner, req.params.repo, 'test commit: ' + Date.now(), 'Max Wu', 'jackymaxj@gmail.com', Date.now(), refSha, tree.sha)
+    let newRef
+    if (branch) {
+      // update reference info
+      newRef = await updateBranchReference(req.params.owner, req.params.repo, refName, commit.sha, forcePush)
+    } else {
+      // create reference
+      newRef = await createBranchReference(req.params.owner, req.params.repo, refName, commit.sha)
+    }
+    res.render('context', { context: JSON.stringify(newRef, null, 2) })
+  } catch (err) {
+    res.send(err)
+  }
+})
+
 async function getInstallationId (owner, repo) {
   try {
     const jwt = ghApp.getSignedJsonWebToken()
