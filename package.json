@@ -18,7 +18,7 @@
   },
   "homepage": "https://github.com/jackycute/github-app-poc#readme",
   "dependencies": {
-    "@octokit/app": "^3.0.1",
+    "@octokit/app": "^13.1.1",
     "@octokit/request": "^4.1.1",
     "express": "^4.17.1",
     "jade": "^1.11.0"
